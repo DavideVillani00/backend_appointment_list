@@ -1,0 +1,31 @@
+{
+  "name": "backend_appointment_list",
+  "version": "1.0.0",
+  "description": "backend for appointment list project",
+  "homepage": "https://github.com/DavideVillani00/backend_appointment_list#readme",
+  "bugs": {
+    "url": "https://github.com/DavideVillani00/backend_appointment_list/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DavideVillani00/backend_appointment_list.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "start": "nodemon server.js"
+  },
+  "devDependencies": {
+    "morgan": "^1.10.0",
+    "nodemon": "^3.1.9"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2"
+  }
+}
