@@ -1,6 +1,6 @@
 const express = require("express");
 const route = express.Router();
-const { USERS } = require("../../fakeDb");
+const { USERS } = require("../../fakeDb.js");
 const jwt = require("jsonwebtoken");
 
 route.post("/", (req, res) => {

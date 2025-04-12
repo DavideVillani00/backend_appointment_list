@@ -6,6 +6,7 @@ require("dotenv").config();
 const PORT = 3000;
 
 const apiRouter = require("./routes/apiRouter.js");
+const authMiddlewere = require("./middlewere/authMiddlewere.js");
 
 // const { USERS, APPOINTMENT_LIST } = require("./fakeDb.js");
 
@@ -16,6 +17,11 @@ app.use(cors());
 app.use(morgan("dev"));
 
 app.use("/api", apiRouter);
+// app.use("/auth", authMiddlewere);
+
+app.post("/auth", authMiddlewere, (req, res) => {
+  res.status(200).json(req.user);
+});
 
 // users api
 
