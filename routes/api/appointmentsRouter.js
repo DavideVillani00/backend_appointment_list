@@ -12,7 +12,10 @@ router.post("/search", (req, res) => {
     );
   }
   if (date) {
-    result = result.filter((user) => user.date.includes(date));
+    console.log(date);
+    result = result.filter(
+      (user) => Date.parse(user.date) === Date.parse(date)
+    );
   }
   if (userName) {
     result = result.filter((user) => user.userName === userName);
@@ -22,7 +25,7 @@ router.post("/search", (req, res) => {
   }
 
   if (result.length === 0)
-    return res.status(404).json({ msg: "appointment not found" });
+    return res.status(404).json({ msg: "appointment not found", arr: [] });
 
   res.status(200).json(result);
 });

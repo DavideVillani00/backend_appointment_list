@@ -20,7 +20,7 @@ app.use("/api", apiRouter);
 // app.use("/auth", authMiddlewere);
 
 app.post("/auth", authMiddlewere, (req, res) => {
-  res.status(200).json(req.user);
+  res.status(200).json({ userName: req.user.userName, role: req.user.role });
 });
 
 // users api
