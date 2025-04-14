@@ -2,6 +2,16 @@ const express = require("express");
 const router = express.Router();
 const { APPOINTMENT_LIST } = require("../../fakeDb.js");
 
+router.get("/", (req, res) => {
+  res.status(200).json(APPOINTMENT_LIST);
+});
+router.get("/search", (req, res) => {
+  const { id } = req.query;
+  console.log(id);
+  const result = APPOINTMENT_LIST.find((app) => app.id == id);
+  res.status(200).json(result);
+});
+
 router.post("/add", (req, res) => {
   const { userName, date, title, time } = req.body;
   const appointment = {
@@ -17,20 +27,23 @@ router.post("/add", (req, res) => {
 });
 
 router.post("/edit", (req, res) => {
-  const { id, username, title, date, time, check } = req.body;
+  console.log(req.body.searchTitle);
+  const { id, userName, title, date, time, check } = req.body;
   const appointment = APPOINTMENT_LIST.find((app) => app.id == id);
   if (!appointment) {
     return res.status(404).json({ msg: "Appointment not found" });
   }
-  if (username) appointment.userName = username;
+  if (userName) appointment.userName = userName;
   if (title) appointment.title = title;
   if (date) appointment.date = date;
   if (time) appointment.time = time;
   if (check) appointment.check = check;
+
   res.status(200).json({ msg: "Appointment updated" });
 });
 
 router.post("/search", (req, res) => {
+  console.log(req.body);
   const { searchTitle, date, userName, check } = req.body;
 
   let result = APPOINTMENT_LIST;
