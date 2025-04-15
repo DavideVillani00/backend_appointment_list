@@ -5,11 +5,22 @@ const { APPOINTMENT_LIST } = require("../../fakeDb.js");
 router.get("/", (req, res) => {
   res.status(200).json(APPOINTMENT_LIST);
 });
-router.get("/search", (req, res) => {
-  const { id } = req.query;
-  console.log(id);
+router.get("/search/:id", (req, res) => {
+  const { id } = req.params;
   const result = APPOINTMENT_LIST.find((app) => app.id == id);
+  if (!result) res.status(404).json({ msg: "Appointment not found" });
   res.status(200).json(result);
+});
+
+router.put("/edit/:id", (req, res) => {
+  const { id } = req.params;
+  const appointment = APPOINTMENT_LIST.find((app) => app.id == id);
+  if (!appointment) {
+    return res.status(404).json({ msg: "Appointment not found" });
+  }
+  const boolCheck = !appointment.check;
+  appointment.check = boolCheck;
+  res.status(200).json({ msg: "Appointment updated" });
 });
 
 router.post("/add", (req, res) => {
@@ -26,8 +37,7 @@ router.post("/add", (req, res) => {
   res.status(201).json({ msg: "Appointment created" });
 });
 
-router.post("/edit", (req, res) => {
-  console.log(req.body.searchTitle);
+router.put("/edit", (req, res) => {
   const { id, userName, title, date, time, check } = req.body;
   const appointment = APPOINTMENT_LIST.find((app) => app.id == id);
   if (!appointment) {
@@ -65,9 +75,20 @@ router.post("/search", (req, res) => {
   }
 
   if (result.length === 0)
-    return res.status(404).json({ msg: "appointment not found", arr: [] });
+    return res.status(404).json({ msg: "Appointment not found", arr: [] });
 
   res.status(200).json(result);
+});
+
+router.delete("/delete/:id", (req, res) => {
+  const { id } = req.params;
+  const appointmentIndex = APPOINTMENT_LIST.findIndex((app) => app.id == id);
+  if (appointmentIndex == -1)
+    return res.status(404).json({ msg: "Appointment not found" });
+
+  APPOINTMENT_LIST.splice(appointmentIndex, 1);
+
+  res.status(200).json({ msg: "Appointment deleted" });
 });
 
 module.exports = router;
