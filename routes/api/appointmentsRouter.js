@@ -53,13 +53,12 @@ router.put("/edit", (req, res) => {
 });
 
 router.post("/search", (req, res) => {
-  console.log(req.body);
-  const { searchTitle, date, userName, check } = req.body;
+  const { title, date, userName, check } = req.body;
 
   let result = APPOINTMENT_LIST;
-  if (searchTitle) {
+  if (title) {
     result = result.filter((user) =>
-      user.title.toLowerCase().includes(searchTitle.toLowerCase())
+      user.title.toLowerCase().includes(title.toLowerCase())
     );
   }
   if (date) {
@@ -73,7 +72,6 @@ router.post("/search", (req, res) => {
   if (typeof check === "boolean") {
     result = result.filter((user) => user.check == check);
   }
-
   if (result.length === 0)
     return res.status(404).json({ msg: "Appointment not found", arr: [] });
 

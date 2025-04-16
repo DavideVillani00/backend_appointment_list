@@ -9,7 +9,6 @@ router.get("/", (req, res) => {
 router.get("/search/:id", (req, res) => {
   const { id } = req.params;
   const user = USERS.find((u) => u.id == id);
-  console.log(user);
   if (!user) res.status(404).json({ msg: "User not found" });
   res.status(200).json(user);
 });
@@ -99,6 +98,16 @@ router.put("/edit", (req, res) => {
   if (company) user.company = company;
 
   res.status(200).json({ msg: "User updated" });
+});
+
+router.delete("/delete/:id", (req, res) => {
+  const { id } = req.params;
+  const userIndex = USERS.findIndex((u) => u.id == id);
+  if (userIndex == -1) return res.status(404).json({ msg: "User not found" });
+
+  USERS.splice(userIndex, 1);
+
+  res.status(200).json({ msg: "User deleted" });
 });
 
 module.exports = router;

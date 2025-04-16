@@ -16,7 +16,7 @@ route.post("/", (req, res) => {
     return res.status(404).json({ err: "Password", msg: "Wrong password" });
 
   const token = jwt.sign(
-    { userName: user.userName, role: user.role },
+    { userName: user.userName, role: user.role, id: user.id },
     process.env.SECRET_KEY,
     { expiresIn: "1h" }
   );
