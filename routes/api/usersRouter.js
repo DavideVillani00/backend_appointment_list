@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { USERS } = require("../../fakeDb.js");
+// const { USERS } = require("../../fakeDb.js");
 const conn = require("../../connectionDb.js");
 const bcrypt = require("bcrypt");
 
@@ -20,7 +20,7 @@ router.get("/search/:id", async (req, res) => {
       id,
     ]);
     if (rows.length === 0) {
-      return res.status(204).json({ msg: "User not found" });
+      return res.status(404).json({ msg: "User not found" });
     }
     res.status(200).json(rows);
   } catch (err) {
@@ -32,15 +32,21 @@ router.get("/search/:id", async (req, res) => {
 // res.status(200).json(user);
 
 router.post("/search", async (req, res) => {
-  //! da controllare
   const { userName, role } = req.body;
+  let query = "SELECT * FROM users ";
+  let params = [];
+  if (userName) {
+    role ? params.push(userName, role) : params.push(userName);
+    query += role ? "WHERE userName = ? AND role = ?" : "WHERE userName = ?";
+  } else if (role) {
+    userName ? params.push(role, userName) : params.push(role);
+    query += userName ? "WHERE role = ? AND userName = ?" : "WHERE role = ?";
+  }
+  console.log(query, params);
   try {
-    const [rows] = await conn.query(
-      "SELECT * FROM users WHERE userName = ? AND role = ?",
-      [userName, role]
-    );
+    const [rows] = await conn.query(query, params);
     if (rows.length === 0) {
-      res.status(204).json({ msg: "Users not found", arr: rows });
+      return res.status(404).json({ msg: "Users not found", arr: rows });
     }
     res.status(200).json(rows);
   } catch (err) {
@@ -111,7 +117,6 @@ router.post("/add", async (req, res) => {
 });
 
 router.put("/edit", async (req, res) => {
-  // !non funziona
   const {
     id,
     role,
@@ -123,13 +128,26 @@ router.put("/edit", async (req, res) => {
     company,
     gender,
   } = req.body;
-
   try {
     const passHash = await bcrypt.hash(password, 10);
-    await conn.query(
+    console.log(
+      role,
+      userName,
+      email,
+      passHash,
+      name,
+      surname,
+      gender,
+      company,
+      id
+    );
+    const [result] = await conn.query(
       "UPDATE users SET role = ?, userName = ?, email = ?, password = ?, firstName = ?, lastName = ?, gender = ?, company = ? WHERE userId = ?",
       [role, userName, email, passHash, name, surname, gender, company, id]
     );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ msg: "User not found" });
+    }
     res.status(201).json({ msg: "User updated" });
   } catch (err) {
     if (err.code === "ER_DUP_ENTRY") {
@@ -173,10 +191,14 @@ router.put("/edit", async (req, res) => {
 });
 
 router.delete("/delete/:id", async (req, res) => {
-  // !da sistemare, non mi da errore in caso di mancanza di user
   const { id } = req.params;
   try {
-    await conn.query("DELETE FROM users WHERE userId = ?", [id]);
+    const [result] = await conn.query("DELETE FROM users WHERE userId = ?", [
+      id,
+    ]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ msg: "User not found" });
+    }
     res.status(200).json({ msg: "User deleted" });
   } catch (err) {
     res.status(500).json({ msg: "Database error:", err });
