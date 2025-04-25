@@ -1,21 +1,28 @@
 # backend_appointment_list
 
-backend for appointment list project
+## Configurazione ambiente:
 
-- per far funzionare il progetto avviare entrambi i progetti (appointment_list & backend_appointment_list),
+1. importa il db che si trova nella cartella mysql_db
+2. Copia il file `.env.example` e rinominalo `.env`
+3. modifica i dati del tuo database e la chiave segreta
 
-BackEnd:
+## Avviamento progetto:
 
-- scaricare la repository o aggiornarla con "git pull origin main"
-- installare il pacchetto moduli con "npm i"
-- creare un file ".env" ed inserire "SECRET_KEY= chiave_segreta"
-- avviare il server il server con nodemone tramite il comando "npm start"
+1. scaricare ed aggiornare entrambi i progetti da github `appointment_list` e `backend_appointment_list`
+2. installare i pacchetti node per entrambi i progetti `npm i`
+3. avviare il server in `backend_appointment_list` con il comando `npm start`
+4. avviare il progetto in `appointment_list` con il comnado `npm run dev`
 
-FrontEnd:
+## Utente Admin:
 
-- scaricare la repository o aggiornarla con "git pull origin master"
-- installare il pacchetto moduli con "npm i"
-- avviare il progetto react con "npm run dev" e cliccare sul link in console
+{
+"role": "Admin",
+"userName": `Admin`,
+"email": "Admin@admin.it",
+"password": `Admin.123456`,
+"firstName": "admin",
+"lastName": "admin",
+"gender": "Other",
+"company": "admin"
 
-N.B.
-Ho creato un database fittizio composto da un array con all'interno alcuni utenti già registrati, è possibile accedere con un utente admin (Mario/Luigi) per aver accesso al pulsante che porta nella pagina admin, dove li si potranno creare altri admin
+}

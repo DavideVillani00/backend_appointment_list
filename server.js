@@ -20,7 +20,7 @@ app.post("/auth", authMiddlewere, (req, res) => {
   res.status(200).json({
     userName: req.user.userName,
     role: req.user.role,
-    id: req.user.id,
+    userId: req.user.userId,
   });
 });
 

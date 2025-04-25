@@ -19,6 +19,7 @@ route.post("/", async (req, res) => {
   if (!verifyPass) {
     return res.status(403).json({ err: "Password", msg: "Wrong password" });
   }
+  console.log(rows[0].userId);
   const token = jwt.sign(
     { userName: rows[0].userName, role: rows[0].role, userId: rows[0].userId },
     process.env.SECRET_KEY,
