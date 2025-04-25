@@ -8,13 +8,14 @@ router.post("/", async (req, res) => {
   // const user = req.body;
   const user = req.body;
 
-  const { userName, email, password, name, surname, company, gender } = user;
+  const { userName, email, password, firstName, lastName, company, gender } =
+    user;
 
   try {
     const passHash = await bcrypt.hash(password, 10);
     await conn.query(
       "INSERT INTO users ( userName, email, password, firstName, lastName, gender, company) VALUES ( ?, ?, ?, ?, ?, ?, ?)",
-      [userName, email, passHash, name, surname, gender, company]
+      [userName, email, passHash, firstName, lastName, gender, company]
     );
     res.status(201).json({ msg: "User created" });
   } catch (err) {

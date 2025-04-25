@@ -22,7 +22,9 @@ router.get("/search/:id", async (req, res) => {
     if (rows.length === 0) {
       return res.status(404).json({ msg: "User not found" });
     }
-    res.status(200).json(rows);
+    console.log(rows[0]);
+    rows[0].password = "";
+    res.status(200).json(rows[0]);
   } catch (err) {
     res.status(500).json({ msg: "Database error", err });
   }
@@ -33,16 +35,16 @@ router.get("/search/:id", async (req, res) => {
 
 router.post("/search", async (req, res) => {
   const { userName, role } = req.body;
-  let query = "SELECT * FROM users ";
+  let query = "SELECT * FROM users WHERE 1=1 ";
   let params = [];
   if (userName) {
-    role ? params.push(userName, role) : params.push(userName);
-    query += role ? "WHERE userName = ? AND role = ?" : "WHERE userName = ?";
-  } else if (role) {
-    userName ? params.push(role, userName) : params.push(role);
-    query += userName ? "WHERE role = ? AND userName = ?" : "WHERE role = ?";
+    query += "AND userName = ? ";
+    params.push(userName);
   }
-  console.log(query, params);
+  if (role) {
+    query += "AND role = ? ";
+    params.push(role);
+  }
   try {
     const [rows] = await conn.query(query, params);
     if (rows.length === 0) {
@@ -67,14 +69,22 @@ router.post("/search", async (req, res) => {
 });
 
 router.post("/add", async (req, res) => {
-  const { role, userName, email, password, name, surname, company, gender } =
-    req.body;
+  const {
+    role,
+    userName,
+    email,
+    password,
+    firstName,
+    lastName,
+    company,
+    gender,
+  } = req.body;
 
   try {
     const passHash = await bcrypt.hash(password, 10);
     await conn.query(
       "INSERT INTO users (role, userName, email, password, firstName, lastName, gender, company) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-      [role, userName, email, passHash, name, surname, gender, company]
+      [role, userName, email, passHash, firstName, lastName, gender, company]
     );
     res.status(201).json({ msg: "User created" });
   } catch (err) {
@@ -118,32 +128,35 @@ router.post("/add", async (req, res) => {
 
 router.put("/edit", async (req, res) => {
   const {
-    id,
+    userId,
     role,
     userName,
     email,
     password,
-    name,
-    surname,
+    firstName,
+    lastName,
     company,
     gender,
   } = req.body;
   try {
-    const passHash = await bcrypt.hash(password, 10);
-    console.log(
-      role,
-      userName,
-      email,
-      passHash,
-      name,
-      surname,
-      gender,
-      company,
-      id
-    );
+    const passHash = password && (await bcrypt.hash(password, 10));
+    const passwordQuery = password ? " password = ?," : "";
+    const params = password
+      ? [
+          role,
+          userName,
+          email,
+          passHash,
+          firstName,
+          lastName,
+          gender,
+          company,
+          userId,
+        ]
+      : [role, userName, email, firstName, lastName, gender, company, userId];
     const [result] = await conn.query(
-      "UPDATE users SET role = ?, userName = ?, email = ?, password = ?, firstName = ?, lastName = ?, gender = ?, company = ? WHERE userId = ?",
-      [role, userName, email, passHash, name, surname, gender, company, id]
+      `UPDATE users SET role = ?, userName = ?, email = ?, ${passwordQuery} firstName = ?, lastName = ?, gender = ?, company = ? WHERE userId = ?`,
+      params
     );
     if (result.affectedRows === 0) {
       return res.status(404).json({ msg: "User not found" });
@@ -192,6 +205,7 @@ router.put("/edit", async (req, res) => {
 
 router.delete("/delete/:id", async (req, res) => {
   const { id } = req.params;
+  console.log(id);
   try {
     const [result] = await conn.query("DELETE FROM users WHERE userId = ?", [
       id,

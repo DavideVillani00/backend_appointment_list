@@ -10,6 +10,7 @@ const conn = mysql.createPool({
   database: DB_NAME,
   waitForConnections: true,
   connectionLimit: 10,
+  dateStrings: true,
 });
 
 module.exports = conn;

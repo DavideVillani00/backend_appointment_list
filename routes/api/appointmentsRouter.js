@@ -1,11 +1,20 @@
 const express = require("express");
 const router = express.Router();
-const { APPOINTMENT_LIST } = require("../../fakeDb.js");
+// const { APPOINTMENT_LIST } = require("../../fakeDb.js");
 const conn = require("../../connectionDb.js");
 
 router.get("/", async (req, res) => {
   try {
     const [rows] = await conn.query("SELECT * FROM appointments");
+    // console.log(rows);
+    // const formattedApp = await rows.map((app) => {
+    //   return {
+    //     ...app,
+    //     date: app.date.toISOString().split("T")[0],
+    //     time: app.time.slice(0, 5),
+    //   };
+    // });
+    // console.log("formatted", formattedApp);
     res.status(200).json(rows);
   } catch (err) {
     res.status(500).json({ msg: "Database error", err });
@@ -17,13 +26,13 @@ router.get("/search/:id", async (req, res) => {
 
   try {
     const [rows] = await conn.query(
-      "SELECT * FROM appointments WHERE appointmentId = ?",
+      "SELECT a.*, u.userName FROM appointments a JOIN users u ON a.userId = u.userId WHERE appointmentId = ?",
       [id]
     );
     if (rows.length === 0) {
       return res.status(404).json({ msg: "Appointment not found" });
     }
-    res.status(200).json(rows);
+    res.status(200).json(rows[0]);
   } catch (err) {
     res.status(500).json({ msg: "Database error", err });
   }
@@ -38,7 +47,7 @@ router.put("/edit/:id", async (req, res) => {
 
   try {
     const [rows] = await conn.query(
-      "SELECT done FROM appointments WHERE id = ?",
+      "SELECT done FROM appointments WHERE appointmentId = ?",
       [id]
     );
     if (rows.length === 0) {
@@ -46,9 +55,8 @@ router.put("/edit/:id", async (req, res) => {
     }
     const invertedBool = !rows[0].done;
     const [result] = await conn.query(
-      "UPDATE appointments SET done = ? WHERE id = ?",
-      invertedBool,
-      id
+      "UPDATE appointments SET done = ? WHERE appointmentId = ?",
+      [invertedBool, id]
     );
     if (result.affectedRows === 0) {
       return res.status(500).json({ msg: "Update failed" });
@@ -69,10 +77,10 @@ router.put("/edit/:id", async (req, res) => {
 
 router.post("/add", async (req, res) => {
   const { userName, date, title, time } = req.body;
-
+  console.log(date);
   try {
     const [rows] = await conn.query(
-      "SELECT userId from users WHERE userName = ?",
+      "SELECT userId FROM users WHERE userName = ?",
       [userName]
     );
     if (rows.length === 0) {
@@ -99,57 +107,117 @@ router.post("/add", async (req, res) => {
   // res.status(201).json({ msg: "Appointment created" });
 });
 
-// ! da finire
-router.put("/edit", (req, res) => {
-  const { id, userName, title, date, time, check } = req.body;
-  const appointment = APPOINTMENT_LIST.find((app) => app.id == id);
-  if (!appointment) {
-    return res.status(404).json({ msg: "Appointment not found" });
+router.put("/edit", async (req, res) => {
+  const { appointmentId, userName, title, date, time } = req.body;
+  try {
+    const [rows] = await conn.query(
+      "SELECT userId FROM users WHERE userName = ?",
+      [userName]
+    );
+    if (rows.length === 0) {
+      return res.status(404).json({ msg: "User not found" });
+    }
+    const [result] = await conn.query(
+      "UPDATE appointments SET userId = ?, title = ?, date = ?, time = ? WHERE appointmentId = ?",
+      [rows[0].userId, title, date, time, appointmentId]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ msg: "Appointment not found" });
+    }
+    res.status(200).json({ msg: "Appointment updated" });
+  } catch (err) {
+    res.status(500).json({ msg: "Database error:", err });
   }
-  if (userName) appointment.userName = userName;
-  if (title) appointment.title = title;
-  if (date) appointment.date = date;
-  if (time) appointment.time = time;
-  if (check) appointment.check = check;
+  // const appointment = APPOINTMENT_LIST.find((app) => app.id == id);
+  // if (!appointment) {
+  //   return res.status(404).json({ msg: "Appointment not found" });
+  // }
+  // if (userName) appointment.userName = userName;
+  // if (title) appointment.title = title;
+  // if (date) appointment.date = date;
+  // if (time) appointment.time = time;
+  // if (check) appointment.check = check;
 
-  res.status(200).json({ msg: "Appointment updated" });
+  // res.status(200).json({ msg: "Appointment updated" });
 });
 
-router.post("/search", (req, res) => {
-  const { title, date, userName, check } = req.body;
-
-  let result = APPOINTMENT_LIST;
+router.post("/search", async (req, res) => {
+  const { title, date, userName, done } = req.body;
+  console.log(req.body.date);
+  let query =
+    "SELECT a.*, u.userName FROM appointments a JOIN users u ON a.userId = u.userId WHERE 1=1 ";
+  let params = [];
   if (title) {
-    result = result.filter((user) =>
-      user.title.toLowerCase().includes(title.toLowerCase())
-    );
+    query += "AND LOWER(a.title) LIKE ? ";
+    params.push(`%${title.toLowerCase()}%`);
   }
   if (date) {
-    result = result.filter(
-      (user) => Date.parse(user.date) === Date.parse(date)
-    );
+    query += "AND a.date = ? ";
+    params.push(date);
   }
-  if (userName && userName !== "All") {
-    result = result.filter((user) => user.userName === userName);
+  if (userName) {
+    query += "AND u.userName = ? ";
+    params.push(userName);
   }
-  if (typeof check === "boolean") {
-    result = result.filter((user) => user.check == check);
+  if (typeof done === "boolean") {
+    query += "AND a.done = ? ";
+    params.push(done);
   }
-  if (result.length === 0)
-    return res.status(404).json({ msg: "Appointment not found", arr: [] });
+  try {
+    const [rows] = await conn.query(query, params);
+    console.log(rows, query, params);
+    if (rows.length === 0) {
+      return res.status(404).json({ msg: "Appointment not found", arr: [] });
+    }
+    res.status(200).json(rows);
+  } catch (err) {
+    res.status(500).json({ msg: "Database error", err });
+  }
 
-  res.status(200).json(result);
+  // let result = APPOINTMENT_LIST;
+  // if (title) {
+  //   result = result.filter((user) =>
+  //     user.title.toLowerCase().includes(title.toLowerCase())
+  //   );
+  // }
+  // if (date) {
+  //   result = result.filter(
+  //     (user) => Date.parse(user.date) === Date.parse(date)
+  //   );
+  // }
+  // if (userName && userName !== "All") {
+  //   result = result.filter((user) => user.userName === userName);
+  // }
+  // if (typeof check === "boolean") {
+  //   result = result.filter((user) => user.check == check);
+  // }
+  // if (result.length === 0)
+  //   return res.status(404).json({ msg: "Appointment not found", arr: [] });
+
+  // res.status(200).json(result);
 });
 
-router.delete("/delete/:id", (req, res) => {
+router.delete("/delete/:id", async (req, res) => {
   const { id } = req.params;
-  const appointmentIndex = APPOINTMENT_LIST.findIndex((app) => app.id == id);
-  if (appointmentIndex == -1)
-    return res.status(404).json({ msg: "Appointment not found" });
+  try {
+    const [result] = await conn.query(
+      "DELETE FROM appointments WHERE appointmentId = ?",
+      [id]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ msg: "Appointment not found" });
+    }
+    res.status(200).json({ msg: "Appointment deleted" });
+  } catch (err) {
+    res.status(500).json({ msg: "Database error:", err });
+  }
+  // const appointmentIndex = APPOINTMENT_LIST.findIndex((app) => app.id == id);
+  // if (appointmentIndex == -1)
+  //   return res.status(404).json({ msg: "Appointment not found" });
 
-  APPOINTMENT_LIST.splice(appointmentIndex, 1);
+  // APPOINTMENT_LIST.splice(appointmentIndex, 1);
 
-  res.status(200).json({ msg: "Appointment deleted" });
+  // res.status(200).json({ msg: "Appointment deleted" });
 });
 
 module.exports = router;
